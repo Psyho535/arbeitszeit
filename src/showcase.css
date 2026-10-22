@@ -4,7 +4,7 @@
   --ink-2: #4a5a70;
   --rule: #c9d3dd;
   --amber: #e9a821;
-  --code-bg: #141517;
+  --code-bg: #000000;
   --code-ink: #e2e3e6;
   --code-dim: #6c7078;
 }
@@ -30,7 +30,9 @@ body {
   --screen-ink: #16233a;
   position: relative;
   width: 402px;
-  height: min(874px, calc(100vh - 110px));
+  height: 874px;
+  flex: none;
+  transform-origin: top center;
   padding: 4px;
   border-radius: 64px;
   background: linear-gradient(145deg, #c9cbcf 0%, #8d9096 22%, #b4b7bc 48%, #6f7277 76%, #a9acb1 100%);
@@ -116,8 +118,8 @@ body {
 
 /* Statusleiste passend zum Farbschema der App */
 @media (prefers-color-scheme: dark) {
-  .phone { --screen: #141517; --screen-ink: #ececee; }
+  .phone { --screen: #000000; --screen-ink: #ececee; }
 }
 /* Fest gewähltes Erscheinungsbild der App übernehmen */
-.phone.theme-dark { --screen: #141517; --screen-ink: #ececee; }
+.phone.theme-dark { --screen: #000000; --screen-ink: #ececee; }
 .phone.theme-light { --screen: #f2f2f6; --screen-ink: #16233a; }

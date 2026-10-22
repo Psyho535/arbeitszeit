@@ -92,6 +92,16 @@ frame.addEventListener('load', () => {
   new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 });
 
+// iPhone in echten Proportionen (402 × 874) zeigen und passend verkleinern
+const phoneEl = document.querySelector<HTMLElement>('.phone')!;
+const fitPhone = () => {
+  const s = Math.max(0.55, Math.min(1, (innerHeight - 90) / 874, (innerWidth - 48) / 410));
+  phoneEl.style.transform = `scale(${s})`;
+  phoneEl.style.margin = `0 ${(-402 * (1 - s)) / 2}px ${-874 * (1 - s)}px`; // Platz des verkleinerten Handys
+};
+fitPhone();
+addEventListener('resize', fitPhone);
+
 // Uhrzeit in der Statusleiste wie auf dem iPhone (ohne führende Null)
 const sbTime = document.getElementById('sb-time')!;
 const tickTime = () => {

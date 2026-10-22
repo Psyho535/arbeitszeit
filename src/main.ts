@@ -47,7 +47,7 @@ function dateAt(iso: string, min: number): Date {
 }
 
 // Erscheinungsbild: „auto“ folgt dem Gerät, sonst fest hell oder dunkel
-const THEME_COLOR = { light: '#F2F2F6', dark: '#141517' };
+const THEME_COLOR = { light: '#F2F2F6', dark: '#000000' };
 function applyTheme() {
   const t = s().theme;
   const root = document.documentElement;
