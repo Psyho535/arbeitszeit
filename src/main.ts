@@ -437,6 +437,10 @@ function renderCards(today: string, nowMin: number, total: number, r: DayResult 
     ['Stundenlohn', fmtEuro(p.hourly)],
   ];
   $('pay').innerHTML = items.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+  const noSalary = p.hourly === 0;
+  $('pay').hidden = noSalary;
+  $('pay-note').textContent = noSalary ? 'Trag dein Nettogehalt in den Einstellungen ein, dann siehst du hier deinen Verdienst.' : 'heute verdient';
+  if (noSalary) $('pay-value').textContent = '–';
 
   // Trends
   const mo = mondayOf(today);
