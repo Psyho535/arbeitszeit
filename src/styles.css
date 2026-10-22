@@ -446,3 +446,7 @@ h2 { font: 600 1.25rem/1.3 var(--text); margin: 0; }
 /* Blätter etwas heller als der Hintergrund, wie in iOS (vor allem im dunklen Modus) */
 .sheet { background: var(--sheet); }
 .sheet .group, .sheet .cell { background: var(--sheet-cell); }
+
+/* Zelle mit Beschriftung oben und breiter Segment-Steuerung darunter */
+.cell.stack { flex-direction: column; align-items: stretch; gap: 8px; padding-top: 12px; padding-bottom: 12px; }
+.cell.stack .seg { width: 100%; }

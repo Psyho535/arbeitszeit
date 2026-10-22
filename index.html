@@ -12,6 +12,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Arbeitszeit</title>
+    <script>
+      // Erscheinungsbild vor dem ersten Zeichnen setzen (kein Aufblitzen)
+      try {
+        var t = localStorage.getItem('theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <a class="skip" href="#woche">Zur Woche springen</a>
@@ -168,6 +175,19 @@
           <button type="button" class="nav-btn strong" data-close>Fertig</button>
         </div>
         <div class="sheet-body">
+          <h3 class="group-title">Darstellung</h3>
+          <div class="group">
+            <div class="cell stack">
+              <span id="theme-label">Erscheinungsbild</span>
+              <div class="seg" role="radiogroup" aria-labelledby="theme-label">
+                <label><input type="radio" name="theme" value="auto" /><span>Auto</span></label>
+                <label><input type="radio" name="theme" value="light" /><span>Hell</span></label>
+                <label><input type="radio" name="theme" value="dark" /><span>Dunkel</span></label>
+              </div>
+            </div>
+          </div>
+          <p class="group-foot">Auto folgt der Einstellung deines Geräts.</p>
+
           <h3 class="group-title">Pause</h3>
           <div class="group">
             <label class="cell"><span>Unter 18</span><input type="checkbox" class="switch" name="under18" /></label>

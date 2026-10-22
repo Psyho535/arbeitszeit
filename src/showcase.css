@@ -26,7 +26,7 @@ body {
 .phone-col { display: grid; justify-items: center; align-content: center; gap: 14px; }
 /* iPhone in Titan-Grau: Metallrahmen, schwarzer Glasrand, Dynamic Island */
 .phone {
-  --screen: #e8edf1; /* Statusleiste in App-Farbe */
+  --screen: #f2f2f6; /* Statusleiste in App-Farbe */
   --screen-ink: #16233a;
   position: relative;
   width: 402px;
@@ -118,3 +118,6 @@ body {
 @media (prefers-color-scheme: dark) {
   .phone { --screen: #141517; --screen-ink: #ececee; }
 }
+/* Fest gewähltes Erscheinungsbild der App übernehmen */
+.phone.theme-dark { --screen: #141517; --screen-ink: #ececee; }
+.phone.theme-light { --screen: #f2f2f6; --screen-ink: #16233a; }

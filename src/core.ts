@@ -19,6 +19,7 @@ export interface Settings {
   fridayThresholdMin: number;
   forgotAfterMin: number; // Erinnerung „Ausstempeln vergessen?“ nach so viel Bruttozeit
   notify: boolean;
+  theme: 'auto' | 'light' | 'dark'; // Erscheinungsbild: wie das Gerät, hell oder dunkel
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fridayThresholdMin: 180,
   forgotAfterMin: 10 * 60,
   notify: false,
+  theme: 'auto',
 };
 
 export const KIND_LABEL: Record<DayKind, string> = {

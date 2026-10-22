@@ -81,6 +81,15 @@ frame.addEventListener('load', () => {
   if (!st) return;
   st.textContent = 'html{scrollbar-width:none}html::-webkit-scrollbar{display:none}';
   frame.contentDocument!.head.append(st);
+  // Statusleiste an das in der App gewählte Erscheinungsbild anpassen
+  const root = frame.contentDocument!.documentElement;
+  const phone = document.querySelector('.phone')!;
+  const sync = () => {
+    phone.classList.toggle('theme-dark', root.dataset.theme === 'dark');
+    phone.classList.toggle('theme-light', root.dataset.theme === 'light');
+  };
+  sync();
+  new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 });
 
 // Uhrzeit in der Statusleiste wie auf dem iPhone (ohne führende Null)

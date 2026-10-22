@@ -46,6 +46,24 @@ function dateAt(iso: string, min: number): Date {
   return d;
 }
 
+// Erscheinungsbild: „auto“ folgt dem Gerät, sonst fest hell oder dunkel
+const THEME_COLOR = { light: '#F2F2F6', dark: '#141517' };
+function applyTheme() {
+  const t = s().theme;
+  const root = document.documentElement;
+  if (t === 'auto') delete root.dataset.theme;
+  else root.dataset.theme = t;
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => {
+    const own = m.media.includes('dark') ? THEME_COLOR.dark : THEME_COLOR.light;
+    m.content = t === 'auto' ? own : THEME_COLOR[t];
+  });
+  try {
+    localStorage.setItem('theme', t); // für das Setzen vor dem ersten Zeichnen
+  } catch {
+    /* ohne Merken */
+  }
+}
+
 function signClass(min: number) {
   return min > 0 ? 'pos' : min < 0 ? 'neg' : '';
 }
@@ -636,6 +654,7 @@ function openSettings() {
   const el = field;
   el('under18').checked = st.under18;
   (settingsForm.querySelector(`input[name="breakMode"][value="${st.breakMode}"]`) as HTMLInputElement).checked = true;
+  (settingsForm.querySelector(`input[name="theme"][value="${st.theme}"]`) as HTMLInputElement).checked = true;
   el('soll').value = fmtClock(st.sollMin);
   el('startBalance').value = fmtSigned(st.startBalanceMin);
   el('fridayThreshold').value = fmtClock(st.fridayThresholdMin);
@@ -682,8 +701,10 @@ settingsForm.addEventListener('change', async (ev) => {
     fridayThresholdMin: parseClock(el('fridayThreshold').value) ?? s().fridayThresholdMin,
     forgotAfterMin: parseClock(el('forgotAfter').value) ?? s().forgotAfterMin,
     notify: el('notify').checked,
+    theme: (settingsForm.querySelector('input[name="theme"]:checked') as HTMLInputElement).value as Settings['theme'],
   };
   if (target.name === 'startBalance') target.value = fmtSigned(startBalance);
+  if (target.name === 'theme') applyTheme();
   await persist();
   render();
 });
@@ -708,6 +729,7 @@ $<HTMLInputElement>('import-json').addEventListener('change', async (ev) => {
     const imported = parseImport(await file.text());
     if (!confirm(`Sicherung mit ${Object.keys(imported.entries).length} Tagen laden? Die aktuellen Daten werden ersetzt.`)) return;
     data = imported;
+    applyTheme();
     await persist();
     closeSheet(settingsSheet);
     toast('Sicherung geladen');
@@ -742,6 +764,7 @@ new IntersectionObserver(([en]) => $('nav').classList.toggle('scrolled', !en.isI
 
 (async () => {
   data = await load();
+  applyTheme();
   viewWeek = mondayOf(now().today);
   render();
   // Schnellstart über App-Shortcut: ?stempeln
