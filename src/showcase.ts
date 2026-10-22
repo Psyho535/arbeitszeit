@@ -1,7 +1,5 @@
 // Nur für die Entwicklung: App im Handyrahmen, Quellcode daneben (wird nicht mitgebaut).
 import '@fontsource/barlow-condensed/600.css';
-import '@fontsource/atkinson-hyperlegible/400.css';
-import '@fontsource/atkinson-hyperlegible/700.css';
 import './showcase.css';
 import mainSrc from './main.ts?raw';
 import coreSrc from './core.ts?raw';

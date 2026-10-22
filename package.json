@@ -17,7 +17,6 @@
     "vitest": "^3.2.7"
   },
   "dependencies": {
-    "@fontsource/atkinson-hyperlegible": "^5.3.0",
     "@fontsource/barlow-condensed": "^5.3.0",
     "idb-keyval": "^6.3.0"
   }

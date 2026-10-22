@@ -57,4 +57,5 @@ npm.cmd run build
 - `src/main.ts` – Oberfläche und Stempeln
 - `src/store.ts` – Speicherung (IndexedDB), Export/Import
 - `src/reminders.ts` – Benachrichtigungen und Kalender-Wecker (.ics)
-- `src/styles.css` – Gestaltung (Stempeluhr: Kartengrau, Tinte, Bernstein)
+- `src/sheet.ts` – Blätter von unten (iOS-Stil, zum Schließen herunterziehen)
+- `src/styles.css` – Gestaltung (iOS-Listen, Glasleisten, Stempeluhr-Ziffern, Bernstein, Graphit im dunklen Modus)

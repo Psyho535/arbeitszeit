@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#E8EDF1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#F2F2F6" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#141517" media="(prefers-color-scheme: dark)" />
     <meta name="color-scheme" content="light dark" />
     <meta name="description" content="Stempeluhr für Ausbildung und Job: einstempeln, ausstempeln, Konto im Blick." />
@@ -15,16 +15,19 @@
   </head>
   <body>
     <a class="skip" href="#woche">Zur Woche springen</a>
+
+    <header class="nav" id="nav">
+      <span class="nav-title" aria-hidden="true">Heute</span>
+      <button class="nav-icon" id="open-settings" aria-label="Einstellungen" type="button">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="10" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      </button>
+    </header>
+
     <div class="app">
-      <header class="top">
-        <div>
-          <h1 id="today-label">Heute</h1>
-          <p class="balance-line">Konto <strong id="balance-top">+0:00</strong></p>
-        </div>
-        <button class="icon-btn" id="open-settings" aria-label="Einstellungen" type="button">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="10" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-        </button>
-      </header>
+      <div class="large-title">
+        <h1 id="large-title">Heute</h1>
+        <p class="subline"><span id="today-label"></span><span class="konto">Konto <strong id="balance-top">+0:00</strong></span></p>
+      </div>
 
       <div id="banner" class="banner" hidden></div>
 
@@ -44,25 +47,27 @@
         </section>
 
         <div class="side">
-          <section id="woche" class="week" aria-labelledby="week-title">
+          <section id="woche" aria-labelledby="week-title">
             <div class="week-head">
-              <button class="icon-btn" id="week-prev" type="button" aria-label="Vorherige Woche">
-                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <button class="nav-icon" id="week-prev" type="button" aria-label="Vorherige Woche">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
               <h2 id="week-title">Diese Woche</h2>
-              <button class="icon-btn" id="week-next" type="button" aria-label="Nächste Woche">
-                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <button class="nav-icon" id="week-next" type="button" aria-label="Nächste Woche">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>
-            <ol class="card-rows" id="week-rows"></ol>
-            <p class="week-sum"><span>Woche</span><strong id="week-sum">+0:00</strong></p>
-            <p class="month-sum" id="month-sum"></p>
+            <div class="group">
+              <ol class="rows" id="week-rows"></ol>
+              <p class="cell sum"><span>Woche</span><strong id="week-sum">+0:00</strong></p>
+            </div>
+            <p class="group-foot" id="month-sum"></p>
           </section>
 
-          <section class="facts" aria-labelledby="facts-title">
-            <h2 id="facts-title">Konto und Verdienst</h2>
-            <p class="friday" id="friday"></p>
-            <dl class="pay" id="pay"></dl>
+          <section aria-labelledby="facts-title">
+            <h2 class="group-title" id="facts-title">Konto und Verdienst</h2>
+            <dl class="group" id="pay"></dl>
+            <p class="group-foot" id="friday"></p>
           </section>
         </div>
       </main>
@@ -70,74 +75,78 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-    <dialog id="day-dialog" aria-labelledby="day-title">
-      <form method="dialog" id="day-form">
-        <h2 id="day-title">Tag bearbeiten</h2>
-        <fieldset class="kinds" id="day-kinds">
-          <legend>Art des Tages</legend>
-        </fieldset>
-        <div class="times" id="day-times">
-          <label>Einstempeln <input type="time" name="start" id="day-start" autocomplete="off" /></label>
-          <label>Ausstempeln <input type="time" name="end" id="day-end" autocomplete="off" /></label>
+    <dialog id="day-sheet" class="sheet" aria-labelledby="day-title">
+      <form id="day-form" novalidate>
+        <div class="sheet-head">
+          <span class="grabber" aria-hidden="true"></span>
+          <button type="button" class="nav-btn" data-close>Abbrechen</button>
+          <h2 id="day-title">Tag</h2>
+          <button type="submit" class="nav-btn strong">Sichern</button>
         </div>
-        <p class="form-error" id="day-error" role="alert"></p>
-        <div class="dialog-actions">
-          <button type="button" class="ghost danger" id="day-delete">Eintrag löschen</button>
-          <span class="spacer"></span>
-          <button type="button" class="ghost" id="day-cancel">Abbrechen</button>
-          <button type="submit" class="primary" id="day-save">Speichern</button>
+        <div class="sheet-body">
+          <div class="group" id="day-kinds" role="radiogroup" aria-label="Art des Tages"></div>
+          <div class="group" id="day-times">
+            <label class="cell"><span>Einstempeln</span><input type="time" name="start" id="day-start" autocomplete="off" /></label>
+            <label class="cell"><span>Ausstempeln</span><input type="time" name="end" id="day-end" autocomplete="off" /></label>
+          </div>
+          <p class="form-error" id="day-error" role="alert"></p>
+          <div class="group">
+            <button type="button" class="cell cell-btn danger" id="day-delete">Eintrag löschen</button>
+          </div>
         </div>
       </form>
     </dialog>
 
-    <dialog id="settings-dialog" aria-labelledby="settings-title">
-      <form method="dialog" id="settings-form">
-        <h2 id="settings-title">Einstellungen</h2>
-
-        <fieldset>
-          <legend>Pause</legend>
-          <label class="check"><input type="checkbox" name="under18" /> Ich bin unter 18</label>
-          <label class="check"><input type="radio" name="breakMode" value="fixed" /> Pauschal abziehen (30 Min., unter 18: 60 Min.)</label>
-          <label class="check"><input type="radio" name="breakMode" value="legal" /> Gesetzlich nach Dauer staffeln</label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Zeitkonto</legend>
-          <label>Soll pro Tag (Mo–Fr) <input type="time" autocomplete="off" name="soll" required /></label>
-          <label>Startsaldo vor der ersten Erfassung
-            <input type="text" name="startBalance" inputmode="text" placeholder="z. B. +12:30…" autocomplete="off" spellcheck="false" />
-            <small>Z. B. +12:30 oder −1:15</small>
-          </label>
-          <label>Früher gehen am Freitag ab <input type="time" autocomplete="off" name="fridayThreshold" /> <small>Plus auf dem Konto</small></label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Gehalt</legend>
-          <label>Nettogehalt pro Monat (€) <input type="number" name="netSalary" autocomplete="off" min="0" step="1" inputmode="decimal" /></label>
-          <label>Wochenstunden <input type="number" name="weeklyHours" autocomplete="off" min="0" step="0.5" inputmode="decimal" /></label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Erinnerungen</legend>
-          <label class="check"><input type="checkbox" name="notify" /> Benachrichtigungen bei 0:00, Freitag-Ziel und vergessenem Ausstempeln</label>
-          <label>Ausstempeln vergessen? nach <input type="time" autocomplete="off" name="forgotAfter" /> <small>Stunden seit dem Einstempeln</small></label>
-          <small>Benachrichtigungen kommen, solange die App geöffnet ist oder im Hintergrund läuft. Für geschlossene App: beim Einstempeln „Feierabend-Wecker in Kalender“ tippen.</small>
-        </fieldset>
-
-        <fieldset>
-          <legend>Daten</legend>
-          <div class="row-btns">
-            <button type="button" class="ghost" id="export-json">Sicherung herunterladen</button>
-            <button type="button" class="ghost" id="export-csv">Als CSV exportieren</button>
-            <label class="ghost file-btn">Sicherung laden <input type="file" accept="application/json,.json" id="import-json" /></label>
+    <dialog id="settings-sheet" class="sheet" aria-labelledby="settings-title">
+      <form id="settings-form" novalidate>
+        <div class="sheet-head">
+          <span class="grabber" aria-hidden="true"></span>
+          <span></span>
+          <h2 id="settings-title">Einstellungen</h2>
+          <button type="button" class="nav-btn strong" data-close>Fertig</button>
+        </div>
+        <div class="sheet-body">
+          <h3 class="group-title">Pause</h3>
+          <div class="group">
+            <label class="cell"><span>Unter 18</span><input type="checkbox" class="switch" name="under18" /></label>
+            <div class="cell">
+              <span id="break-label">Pausenregel</span>
+              <div class="seg" role="radiogroup" aria-labelledby="break-label">
+                <label><input type="radio" name="breakMode" value="fixed" /><span>Pauschal</span></label>
+                <label><input type="radio" name="breakMode" value="legal" /><span>Gesetzlich</span></label>
+              </div>
+            </div>
           </div>
-        </fieldset>
+          <p class="group-foot" id="break-foot"></p>
 
-        <p class="form-error" id="settings-error" role="alert"></p>
-        <div class="dialog-actions">
-          <span class="spacer"></span>
-          <button type="button" class="ghost" id="settings-cancel">Abbrechen</button>
-          <button type="submit" class="primary">Speichern</button>
+          <h3 class="group-title">Zeitkonto</h3>
+          <div class="group">
+            <label class="cell"><span>Soll pro Tag</span><input type="time" name="soll" autocomplete="off" /></label>
+            <label class="cell"><span>Startsaldo</span><input type="text" name="startBalance" placeholder="+0:00…" autocomplete="off" spellcheck="false" /></label>
+            <label class="cell"><span>Freitag früher gehen ab</span><input type="time" name="fridayThreshold" autocomplete="off" /></label>
+          </div>
+          <p class="group-foot">Startsaldo ist dein Konto vor der ersten Erfassung, z. B. +12:30 oder −1:15. Soll gilt Montag bis Freitag.</p>
+
+          <h3 class="group-title">Gehalt</h3>
+          <div class="group">
+            <label class="cell"><span>Netto pro Monat</span><span class="unit-input"><input type="number" name="netSalary" min="0" step="1" inputmode="decimal" autocomplete="off" /> €</span></label>
+            <label class="cell"><span>Wochenstunden</span><input type="number" name="weeklyHours" min="0" step="0.5" inputmode="decimal" autocomplete="off" /></label>
+          </div>
+
+          <h3 class="group-title">Erinnerungen</h3>
+          <div class="group">
+            <label class="cell"><span>Benachrichtigungen</span><input type="checkbox" class="switch" name="notify" /></label>
+            <label class="cell"><span>„Ausstempeln vergessen?“ nach</span><input type="time" name="forgotAfter" autocomplete="off" /></label>
+          </div>
+          <p class="group-foot">Bei 0:00, beim Freitag-Ziel und wenn du zu lange eingestempelt bist. Kommt, solange die App offen ist oder im Hintergrund läuft. Für geschlossene App: nach dem Einstempeln „Feierabend-Wecker in Kalender“ tippen.</p>
+
+          <h3 class="group-title">Daten</h3>
+          <div class="group">
+            <button type="button" class="cell cell-btn" id="export-json">Sicherung herunterladen</button>
+            <button type="button" class="cell cell-btn" id="export-csv">Als CSV exportieren</button>
+            <label class="cell cell-btn file-btn">Sicherung laden<input type="file" accept="application/json,.json" id="import-json" /></label>
+          </div>
+          <p class="form-error" id="settings-error" role="alert"></p>
         </div>
       </form>
     </dialog>

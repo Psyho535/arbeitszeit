@@ -1,7 +1,5 @@
 import '@fontsource/barlow-condensed/500.css';
 import '@fontsource/barlow-condensed/600.css';
-import '@fontsource/atkinson-hyperlegible/400.css';
-import '@fontsource/atkinson-hyperlegible/700.css';
 import './styles.css';
 import { registerSW } from 'virtual:pwa-register';
 import {
@@ -10,6 +8,7 @@ import {
 } from './core';
 import { AppData, download, exportJSON, load, parseImport, save } from './store';
 import { Reminder, icsFor, requestPermission, schedule } from './reminders';
+import { closeSheet, openSheet, setupSheet } from './sheet';
 
 registerSW({ immediate: true });
 
@@ -21,6 +20,7 @@ let undo: { date: string; prev?: Entry } | null = null;
 
 const fmtDay = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
 const fmtShort = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+const fmtSheet = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'short' });
 const fmtMonth = new Intl.DateTimeFormat('de-DE', { month: 'long' });
 
 function now() {
@@ -72,6 +72,11 @@ async function punch() {
   }
   await persist();
   stampMoment();
+  try {
+    navigator.vibrate?.(12); // kurzes Feedback (Android; iOS erlaubt das Web-Apps nicht)
+  } catch {
+    /* ohne Vibration */
+  }
   render();
 }
 
@@ -186,7 +191,7 @@ function render() {
 function actionBtn(label: string, fn: () => void) {
   const b = document.createElement('button');
   b.type = 'button';
-  b.className = 'ghost small';
+  b.className = 'pill';
   b.textContent = label;
   b.addEventListener('click', fn);
   return b;
@@ -249,6 +254,7 @@ function renderWeek(today: string, nowMin: number) {
   $('week-title').textContent = mondayOf(today) === viewWeek ? `Diese Woche (KW ${kw})` : `KW ${kw}`;
   const rows = $('week-rows');
   rows.replaceChildren();
+  openRow = null;
   let sum = 0;
   const first = entriesSorted(data.entries)[0]?.date ?? today; // vor der ersten Erfassung nichts anmahnen
   for (const date of dates) {
@@ -283,7 +289,22 @@ function renderWeek(today: string, nowMin: number) {
     }
     b.innerHTML = `<span class="d">${fmtShort.format(parseDate(date))}</span><span class="w">${what}</span><span class="v ${cls}">${diffTxt}</span>`;
     b.setAttribute('aria-label', `${fmtDay.format(parseDate(date))}: ${what || 'leer'} ${diffTxt}. Bearbeiten`);
-    b.addEventListener('click', () => openDay(date));
+    b.addEventListener('click', () => {
+      if (b.dataset.swiped) return; // nach dem Wischen kein Öffnen
+      openDay(date);
+    });
+    if (e) {
+      // Wischen nach links zeigt „Löschen“ (Tastatur: Löschen im Blatt)
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'swipe-del';
+      del.textContent = 'Löschen';
+      del.tabIndex = -1;
+      del.setAttribute('aria-hidden', 'true');
+      del.addEventListener('click', () => deleteEntry(date));
+      li.append(del);
+      enableSwipe(b);
+    }
     li.append(b);
     rows.append(li);
   }
@@ -330,7 +351,78 @@ function renderFacts(today: string, total: number, r: ReturnType<typeof dayResul
     ['Monatsstunden', `${p.monthlyHours.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Std.`],
     ['Wert des Kontos', `${total < 0 ? '−' : ''}${fmtEuro(Math.abs((p.hourly * total) / 60))}`],
   ];
-  $('pay').innerHTML = items.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+  $('pay').innerHTML = items.map(([k, v]) => `<div class="cell"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+}
+
+// ---------- Wischen zum Löschen ----------
+
+const SWIPE_OPEN = -96;
+let openRow: HTMLElement | null = null;
+
+function closeOpenRow() {
+  if (!openRow) return;
+  openRow.style.transform = '';
+  openRow = null;
+}
+
+function enableSwipe(row: HTMLElement) {
+  let x0 = 0, y0 = 0, base = 0, dx = 0, mode: 'idle' | 'maybe' | 'drag' = 'idle';
+  row.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    x0 = e.clientX;
+    y0 = e.clientY;
+    base = openRow === row ? SWIPE_OPEN : 0;
+    dx = 0;
+    mode = 'maybe';
+    delete row.dataset.swiped;
+  });
+  row.addEventListener('pointermove', (e) => {
+    if (mode === 'idle') return;
+    const mx = e.clientX - x0, my = e.clientY - y0;
+    if (mode === 'maybe') {
+      if (Math.abs(my) > 10 && Math.abs(my) > Math.abs(mx)) return void (mode = 'idle'); // senkrecht scrollen
+      if (Math.abs(mx) < 8) return;
+      mode = 'drag';
+      row.setPointerCapture(e.pointerId);
+      row.classList.add('dragging');
+      if (openRow && openRow !== row) closeOpenRow();
+    }
+    dx = Math.min(0, Math.max(base + mx, SWIPE_OPEN * 1.4));
+    row.style.transform = `translateX(${dx}px)`;
+  });
+  const end = () => {
+    if (mode === 'drag') {
+      row.dataset.swiped = '1';
+      row.classList.remove('dragging');
+      if (dx < SWIPE_OPEN / 2) {
+        row.style.transform = `translateX(${SWIPE_OPEN}px)`;
+        openRow = row;
+      } else {
+        row.style.transform = '';
+        if (openRow === row) openRow = null;
+      }
+      setTimeout(() => delete row.dataset.swiped, 50);
+    } else if (openRow === row) {
+      // Tipp auf eine offene Zeile schließt sie nur
+      row.dataset.swiped = '1';
+      closeOpenRow();
+      setTimeout(() => delete row.dataset.swiped, 50);
+    }
+    mode = 'idle';
+  };
+  row.addEventListener('pointerup', end);
+  row.addEventListener('pointercancel', end);
+}
+
+async function deleteEntry(date: string) {
+  const prev = data.entries[date];
+  if (!prev) return;
+  delete data.entries[date];
+  undo = { date, prev };
+  openRow = null;
+  await persist();
+  toast('Eintrag gelöscht', true);
+  render();
 }
 
 // ---------- Erinnerungen ----------
@@ -369,17 +461,25 @@ function addIcs(today: string, zeroAt: number, fridayAt?: number) {
 let editDate = '';
 let editKind: DayKind = 'work';
 
+const daySheet = $<HTMLDialogElement>('day-sheet');
+const settingsSheet = $<HTMLDialogElement>('settings-sheet');
+setupSheet(daySheet);
+setupSheet(settingsSheet);
+
+const TICK = '<svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
 function openDay(date: string) {
   editDate = date;
+  closeOpenRow();
   const e = data.entries[date];
   editKind = e?.kind ?? 'work';
-  $('day-title').textContent = fmtDay.format(parseDate(date));
+  $('day-title').textContent = fmtSheet.format(parseDate(date));
   const kinds = $('day-kinds');
-  kinds.querySelectorAll('label').forEach((l) => l.remove());
+  kinds.replaceChildren();
   (Object.keys(KIND_LABEL) as DayKind[]).forEach((k) => {
     const l = document.createElement('label');
-    l.className = 'kind';
-    l.innerHTML = `<input type="radio" name="kind" value="${k}" ${k === editKind ? 'checked' : ''}/> <span>${KIND_LABEL[k]}</span>`;
+    l.className = 'cell check-cell';
+    l.innerHTML = `<span>${KIND_LABEL[k]}</span><input type="radio" name="kind" value="${k}" ${k === editKind ? 'checked' : ''}/>${TICK}`;
     l.querySelector('input')!.addEventListener('change', () => {
       editKind = k;
       $('day-times').hidden = k !== 'work';
@@ -390,8 +490,8 @@ function openDay(date: string) {
   $<HTMLInputElement>('day-end').value = e?.end !== undefined ? fmtClock(e.end) : '';
   $('day-times').hidden = editKind !== 'work';
   $('day-error').textContent = '';
-  $('day-delete').hidden = !e;
-  $<HTMLDialogElement>('day-dialog').showModal();
+  $('day-delete').parentElement!.hidden = !e;
+  openSheet(daySheet);
 }
 
 $('day-form').addEventListener('submit', async (ev) => {
@@ -413,28 +513,34 @@ $('day-form').addEventListener('submit', async (ev) => {
   }
   data.entries[editDate] = entry;
   await persist();
-  $<HTMLDialogElement>('day-dialog').close();
+  closeSheet(daySheet);
   render();
 });
-$('day-cancel').addEventListener('click', () => $<HTMLDialogElement>('day-dialog').close());
 $('day-delete').addEventListener('click', async () => {
-  const prev = data.entries[editDate];
-  delete data.entries[editDate];
-  undo = { date: editDate, prev };
-  await persist();
-  $<HTMLDialogElement>('day-dialog').close();
-  toast('Eintrag gelöscht', true);
-  render();
+  closeSheet(daySheet);
+  await deleteEntry(editDate);
 });
 
 // ---------- Einstellungen ----------
 
+const settingsForm = $<HTMLFormElement>('settings-form');
+const field = (n: string) => settingsForm.elements.namedItem(n) as HTMLInputElement;
+
+function breakFoot() {
+  const legal = (settingsForm.querySelector('input[name="breakMode"]:checked') as HTMLInputElement | null)?.value === 'legal';
+  const u18 = field('under18').checked;
+  $('break-foot').textContent = legal
+    ? u18
+      ? 'Gesetzlich unter 18: 30 Min. ab 4,5 Std., 60 Min. ab 6 Std. Arbeitszeit.'
+      : 'Gesetzlich: 30 Min. ab 6 Std., 45 Min. ab 9 Std. Arbeitszeit.'
+    : `Pauschal: jeden Tag ${u18 ? '60' : '30'} Min. Pause abziehen.`;
+}
+
 function openSettings() {
-  const f = $<HTMLFormElement>('settings-form');
   const st = s();
-  const el = (n: string) => f.elements.namedItem(n) as HTMLInputElement;
+  const el = field;
   el('under18').checked = st.under18;
-  (f.querySelector(`input[name="breakMode"][value="${st.breakMode}"]`) as HTMLInputElement).checked = true;
+  (settingsForm.querySelector(`input[name="breakMode"][value="${st.breakMode}"]`) as HTMLInputElement).checked = true;
   el('soll').value = fmtClock(st.sollMin);
   el('startBalance').value = fmtSigned(st.startBalanceMin);
   el('fridayThreshold').value = fmtClock(st.fridayThresholdMin);
@@ -443,20 +549,22 @@ function openSettings() {
   el('notify').checked = st.notify;
   el('forgotAfter').value = fmtClock(st.forgotAfterMin);
   $('settings-error').textContent = '';
-  $<HTMLDialogElement>('settings-dialog').showModal();
+  breakFoot();
+  openSheet(settingsSheet);
 }
 
 $('open-settings').addEventListener('click', openSettings);
-$('settings-cancel').addEventListener('click', () => $<HTMLDialogElement>('settings-dialog').close());
-$('settings-form').addEventListener('submit', async (ev) => {
-  ev.preventDefault();
-  const f = ev.target as HTMLFormElement;
-  const el = (n: string) => f.elements.namedItem(n) as HTMLInputElement;
+settingsForm.addEventListener('submit', (ev) => ev.preventDefault());
+
+// Wie in iOS: jede Änderung gilt sofort, ohne „Speichern“
+settingsForm.addEventListener('change', async (ev) => {
+  const target = ev.target as HTMLInputElement;
+  if (target.id === 'import-json') return;
+  const el = field;
   const err = $('settings-error');
+  breakFoot();
   const soll = parseClock(el('soll').value);
   const startBalance = parseSigned(el('startBalance').value || '0');
-  const fridayThreshold = parseClock(el('fridayThreshold').value);
-  const forgotAfter = parseClock(el('forgotAfter').value);
   if (soll === undefined) {
     err.textContent = 'Trag ein Soll pro Tag ein, z. B. 07:42.';
     return el('soll').focus();
@@ -465,23 +573,23 @@ $('settings-form').addEventListener('submit', async (ev) => {
     err.textContent = 'Startsaldo bitte als +12:30 oder −1:15 eintragen.';
     return el('startBalance').focus();
   }
+  err.textContent = '';
   // Ohne Browser-Erlaubnis bleiben die Hinweise in der App aktiv
-  const notify = el('notify').checked;
-  const allowed = notify ? await requestPermission() : false;
+  if (target.name === 'notify' && target.checked && !(await requestPermission()))
+    toast('Benachrichtigungen sind blockiert. Hinweise erscheinen nur in der App.');
   data.settings = {
     under18: el('under18').checked,
-    breakMode: (f.querySelector('input[name="breakMode"]:checked') as HTMLInputElement).value as Settings['breakMode'],
+    breakMode: (settingsForm.querySelector('input[name="breakMode"]:checked') as HTMLInputElement).value as Settings['breakMode'],
     sollMin: soll,
     startBalanceMin: startBalance,
     netSalary: Number(el('netSalary').value) || 0,
     weeklyHours: Number(el('weeklyHours').value) || 0,
-    fridayThresholdMin: fridayThreshold ?? 180,
-    forgotAfterMin: forgotAfter ?? 600,
-    notify,
+    fridayThresholdMin: parseClock(el('fridayThreshold').value) ?? s().fridayThresholdMin,
+    forgotAfterMin: parseClock(el('forgotAfter').value) ?? s().forgotAfterMin,
+    notify: el('notify').checked,
   };
+  if (target.name === 'startBalance') target.value = fmtSigned(startBalance);
   await persist();
-  $<HTMLDialogElement>('settings-dialog').close();
-  toast(notify && !allowed ? 'Gespeichert. Benachrichtigungen sind blockiert, Hinweise erscheinen nur in der App.' : 'Einstellungen gespeichert');
   render();
 });
 
@@ -506,7 +614,7 @@ $<HTMLInputElement>('import-json').addEventListener('change', async (ev) => {
     if (!confirm(`Sicherung mit ${Object.keys(imported.entries).length} Tagen laden? Die aktuellen Daten werden ersetzt.`)) return;
     data = imported;
     await persist();
-    $<HTMLDialogElement>('settings-dialog').close();
+    closeSheet(settingsSheet);
     toast('Sicherung geladen');
     render();
   } catch {
@@ -528,6 +636,14 @@ $('week-next').addEventListener('click', () => {
   render();
 });
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && render());
+document.addEventListener('pointerdown', (e) => {
+  if (openRow && !(e.target as HTMLElement).closest('.rows li')) closeOpenRow();
+});
+
+// Großer Titel scrollt weg → Glasleiste mit kleinem Titel
+new IntersectionObserver(([en]) => $('nav').classList.toggle('scrolled', !en.isIntersecting), {
+  rootMargin: '-48px 0px 0px 0px',
+}).observe($('large-title'));
 
 (async () => {
   data = await load();
