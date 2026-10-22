@@ -3,7 +3,7 @@ import '@fontsource/nunito/800.css';
 import './styles.css';
 import { registerSW } from 'virtual:pwa-register';
 import {
-  DayKind, DayResult, Entry, KIND_LABEL, Settings, addDays, avgWorkday, balanceBefore, balanceSeries, balanceTotal,
+  DayKind, DayResult, Entry, KIND_LABEL, Settings, addDays, avgWorkday, balanceBefore, balanceSeries, balanceTotal, breakFor,
   clockForNet, dayResult, entriesSorted, fmtClock, fmtDur, fmtEuro, fmtSigned, minutesOf, mondayOf, parseClock, parseDate,
   parseSigned, pay, spanTotals, toISO, weekDates,
 } from './core';
@@ -391,6 +391,35 @@ function renderChart(dates: string[], today: string, nowMin: number) {
   );
 }
 
+// ---------- Verdienst heute, auf die Sekunde ----------
+
+/** Nettozeit heute in Sekunden (Brutto minus Pause) und der Verdienst dafür. */
+function earnedToday() {
+  const { d, today } = now();
+  const st = s();
+  const e = data.entries[today];
+  const p = pay(st);
+  if (!e || e.kind !== 'work' || e.start === undefined || p.hourly === 0) return undefined;
+  const nowSec = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  const endSec = e.end !== undefined ? e.end * 60 : nowSec;
+  let gross = endSec - e.start * 60;
+  if (gross < 0) gross += 86_400; // über Mitternacht
+  const brk = Math.min(breakFor(Math.floor(gross / 60), st) * 60, gross);
+  const netSec = Math.max(gross - brk, 0);
+  return { netSec, brkSec: brk, hourly: p.hourly, euro: (p.hourly * netSec) / 3600, working: e.end === undefined };
+}
+
+function renderEarn() {
+  const x = earnedToday();
+  $('earn-live').hidden = !x?.working;
+  if (!x) return;
+  const calc = `${fmtDur(Math.floor(x.netSec / 60))} Std. netto × ${fmtEuro(x.hourly)}`;
+  $('earn-live-value').textContent = fmtEuro(x.euro);
+  $('earn-live-calc').textContent = x.brkSec > 0 ? `${calc}, ${fmtDur(x.brkSec / 60)} Pause abgezogen` : calc;
+  $('pay-value').textContent = fmtEuro(x.euro);
+  $('pay-note').textContent = `heute verdient: ${calc}`;
+}
+
 // ---------- Übersichtskarten ----------
 
 function renderCards(today: string, nowMin: number, total: number, r: DayResult | undefined, fridayAt?: number) {
@@ -432,7 +461,7 @@ function renderCards(today: string, nowMin: number, total: number, r: DayResult 
   const month = spanTotals(data.entries, st, today.slice(0, 8) + '01', today, today, nowMin);
   $('pay-value').textContent = fmtEuro((p.hourly * todayNet) / 60);
   const items: [string, string][] = [
-    ['Diesen Monat', fmtEuro((p.hourly * month.net) / 60)],
+    ['Monat bisher', fmtEuro((p.hourly * month.net) / 60)],
     ['Wert des Kontos', `${total < 0 ? '−' : ''}${fmtEuro(Math.abs((p.hourly * total) / 60))}`],
     ['Stundenlohn', fmtEuro(p.hourly)],
   ];
@@ -441,6 +470,7 @@ function renderCards(today: string, nowMin: number, total: number, r: DayResult 
   $('pay').hidden = noSalary;
   $('pay-note').textContent = noSalary ? 'Trag dein Nettogehalt in den Einstellungen ein, dann siehst du hier deinen Verdienst.' : 'heute verdient';
   if (noSalary) $('pay-value').textContent = '–';
+  renderEarn();
 
   // Trends
   const mo = mondayOf(today);
@@ -784,4 +814,5 @@ new IntersectionObserver(([en]) => $('nav').classList.toggle('scrolled', !en.isI
     setTimeout(tick, 60_000 - (Date.now() % 60_000) + 50);
   };
   setTimeout(tick, 60_000 - (Date.now() % 60_000) + 50);
+  setInterval(renderEarn, 1000); // Verdienst zählt sekündlich mit
 })();

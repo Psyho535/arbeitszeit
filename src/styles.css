@@ -450,3 +450,13 @@ h2 { font: 600 1.25rem/1.3 var(--text); margin: 0; }
 /* Zelle mit Beschriftung oben und breiter Segment-Steuerung darunter */
 .cell.stack { flex-direction: column; align-items: stretch; gap: 8px; padding-top: 12px; padding-bottom: 12px; }
 .cell.stack .seg { width: 100%; }
+
+/* Live-Verdienst beim Arbeiten: zählt sekündlich mit */
+.earn-live {
+  display: grid; justify-items: center; gap: 2px;
+  margin: 14px 0 0; padding: 10px 22px; border-radius: 16px;
+  background: color-mix(in srgb, var(--c-pay) 12%, transparent);
+}
+.earn-label { font-size: 0.8125rem; font-weight: 600; color: var(--c-pay-ink); }
+.earn-live strong { font: 800 1.75rem/1.1 var(--digits); font-variant-numeric: tabular-nums; }
+.earn-calc { font-size: 0.8125rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
