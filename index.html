@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#E8EDF1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0E1828" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="Stempeluhr für Ausbildung und Job: einstempeln, ausstempeln, Konto im Blick." />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Arbeitszeit</title>
+  </head>
+  <body>
+    <a class="skip" href="#woche">Zur Woche springen</a>
+    <div class="app">
+      <header class="top">
+        <div>
+          <h1 id="today-label">Heute</h1>
+          <p class="balance-line">Konto <strong id="balance-top">+0:00</strong></p>
+        </div>
+        <button class="icon-btn" id="open-settings" aria-label="Einstellungen" type="button">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="10" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        </button>
+      </header>
+
+      <div id="banner" class="banner" hidden></div>
+
+      <main class="grid">
+        <section class="clock" aria-labelledby="clock-status">
+          <p class="clock-digits" id="clock-digits" aria-hidden="true">0:00</p>
+          <p class="clock-status" id="clock-status">Noch nicht eingestempelt</p>
+          <div class="daybar" id="daybar" hidden></div>
+          <p class="clock-hint" id="clock-hint"></p>
+          <div class="clock-actions" id="clock-actions"></div>
+          <div class="stamp-dock">
+            <button class="stamp" id="stamp" type="button">
+              <span class="stamp-label" id="stamp-label">Einstempeln</span>
+              <span class="stamp-time" id="stamp-time">--:--</span>
+            </button>
+          </div>
+        </section>
+
+        <div class="side">
+          <section id="woche" class="week" aria-labelledby="week-title">
+            <div class="week-head">
+              <button class="icon-btn" id="week-prev" type="button" aria-label="Vorherige Woche">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <h2 id="week-title">Diese Woche</h2>
+              <button class="icon-btn" id="week-next" type="button" aria-label="Nächste Woche">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+            <ol class="card-rows" id="week-rows"></ol>
+            <p class="week-sum"><span>Woche</span><strong id="week-sum">+0:00</strong></p>
+            <p class="month-sum" id="month-sum"></p>
+          </section>
+
+          <section class="facts" aria-labelledby="facts-title">
+            <h2 id="facts-title">Konto und Verdienst</h2>
+            <p class="friday" id="friday"></p>
+            <dl class="pay" id="pay"></dl>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <dialog id="day-dialog" aria-labelledby="day-title">
+      <form method="dialog" id="day-form">
+        <h2 id="day-title">Tag bearbeiten</h2>
+        <fieldset class="kinds" id="day-kinds">
+          <legend>Art des Tages</legend>
+        </fieldset>
+        <div class="times" id="day-times">
+          <label>Einstempeln <input type="time" name="start" id="day-start" autocomplete="off" /></label>
+          <label>Ausstempeln <input type="time" name="end" id="day-end" autocomplete="off" /></label>
+        </div>
+        <p class="form-error" id="day-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button type="button" class="ghost danger" id="day-delete">Eintrag löschen</button>
+          <span class="spacer"></span>
+          <button type="button" class="ghost" id="day-cancel">Abbrechen</button>
+          <button type="submit" class="primary" id="day-save">Speichern</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <form method="dialog" id="settings-form">
+        <h2 id="settings-title">Einstellungen</h2>
+
+        <fieldset>
+          <legend>Pause</legend>
+          <label class="check"><input type="checkbox" name="under18" /> Ich bin unter 18</label>
+          <label class="check"><input type="radio" name="breakMode" value="fixed" /> Pauschal abziehen (30 Min., unter 18: 60 Min.)</label>
+          <label class="check"><input type="radio" name="breakMode" value="legal" /> Gesetzlich nach Dauer staffeln</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Zeitkonto</legend>
+          <label>Soll pro Tag (Mo–Fr) <input type="time" autocomplete="off" name="soll" required /></label>
+          <label>Startsaldo vor der ersten Erfassung
+            <input type="text" name="startBalance" inputmode="text" placeholder="z. B. +12:30…" autocomplete="off" spellcheck="false" />
+            <small>Z. B. +12:30 oder −1:15</small>
+          </label>
+          <label>Früher gehen am Freitag ab <input type="time" autocomplete="off" name="fridayThreshold" /> <small>Plus auf dem Konto</small></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Gehalt</legend>
+          <label>Nettogehalt pro Monat (€) <input type="number" name="netSalary" autocomplete="off" min="0" step="1" inputmode="decimal" /></label>
+          <label>Wochenstunden <input type="number" name="weeklyHours" autocomplete="off" min="0" step="0.5" inputmode="decimal" /></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Erinnerungen</legend>
+          <label class="check"><input type="checkbox" name="notify" /> Benachrichtigungen bei 0:00, Freitag-Ziel und vergessenem Ausstempeln</label>
+          <label>Ausstempeln vergessen? nach <input type="time" autocomplete="off" name="forgotAfter" /> <small>Stunden seit dem Einstempeln</small></label>
+          <small>Benachrichtigungen kommen, solange die App geöffnet ist oder im Hintergrund läuft. Für geschlossene App: beim Einstempeln „Feierabend-Wecker in Kalender“ tippen.</small>
+        </fieldset>
+
+        <fieldset>
+          <legend>Daten</legend>
+          <div class="row-btns">
+            <button type="button" class="ghost" id="export-json">Sicherung herunterladen</button>
+            <button type="button" class="ghost" id="export-csv">Als CSV exportieren</button>
+            <label class="ghost file-btn">Sicherung laden <input type="file" accept="application/json,.json" id="import-json" /></label>
+          </div>
+        </fieldset>
+
+        <p class="form-error" id="settings-error" role="alert"></p>
+        <div class="dialog-actions">
+          <span class="spacer"></span>
+          <button type="button" class="ghost" id="settings-cancel">Abbrechen</button>
+          <button type="submit" class="primary">Speichern</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
