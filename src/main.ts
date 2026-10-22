@@ -1,10 +1,11 @@
-import '@fontsource/barlow-condensed/500.css';
-import '@fontsource/barlow-condensed/600.css';
+import '@fontsource/nunito/700.css';
+import '@fontsource/nunito/800.css';
 import './styles.css';
 import { registerSW } from 'virtual:pwa-register';
 import {
-  DayKind, Entry, KIND_LABEL, Settings, addDays, balanceBefore, balanceTotal, clockForNet, dayResult, entriesSorted,
-  fmtClock, fmtDur, fmtEuro, fmtSigned, minutesOf, mondayOf, parseClock, parseDate, parseSigned, pay, toISO, weekDates,
+  DayKind, DayResult, Entry, KIND_LABEL, Settings, addDays, avgWorkday, balanceBefore, balanceSeries, balanceTotal,
+  clockForNet, dayResult, entriesSorted, fmtClock, fmtDur, fmtEuro, fmtSigned, minutesOf, mondayOf, parseClock, parseDate,
+  parseSigned, pay, spanTotals, toISO, weekDates,
 } from './core';
 import { AppData, download, exportJSON, load, parseImport, save } from './store';
 import { Reminder, icsFor, requestPermission, schedule } from './reminders';
@@ -132,12 +133,10 @@ function render() {
   const done = !!todayEntry && todayEntry.kind === 'work' && todayEntry.end !== undefined;
 
   $('today-label').textContent = fmtDay.format(d);
-  const bt = $('balance-top');
-  bt.textContent = fmtSigned(total);
-  bt.className = signClass(total);
 
-  // Uhr
+  // Uhr in der Ringmitte
   const digits = $('clock-digits');
+  const caption = $('ring-caption');
   const status = $('clock-status');
   const hint = $('clock-hint');
   const actions = $('clock-actions');
@@ -153,29 +152,32 @@ function render() {
 
   if (working && r) {
     digits.textContent = fmtDur(r.net);
-    status.textContent = `Netto heute, seit ${fmtClock(todayEntry.start!)} eingestempelt`;
-    if (r.diff < 0) hint.innerHTML = `Bei 0:00 um <strong>${fmtClock(zeroAt!)}</strong>, noch ${fmtDur(-r.diff)}.`;
+    caption.textContent = 'netto heute';
+    status.textContent = `Seit ${fmtClock(todayEntry.start!)} eingestempelt`;
+    if (r.diff < 0) hint.innerHTML = `Bei 0:00 um <strong>${fmtClock(zeroAt!)}</strong>, noch ${fmtDur(-r.diff)} Std.`;
     else {
-      hint.innerHTML = `Soll erreicht, heute <strong>${fmtSigned(r.diff)}</strong>.`;
+      hint.innerHTML = `Soll erreicht, heute <strong>${fmtSigned(r.diff)}</strong>`;
       hint.classList.add('pos');
     }
     actions.append(actionBtn('Feierabend-Wecker in Kalender', () => addIcs(today, zeroAt!, fridayAt)));
   } else if (done && r) {
     digits.textContent = fmtDur(r.net);
-    status.textContent = `Netto heute, ${fmtClock(todayEntry.start!)} bis ${fmtClock(todayEntry.end!)}`;
-    hint.innerHTML = `Tagesergebnis <strong>${fmtSigned(r.diff)}</strong>, Pause ${fmtDur(r.brk)}.`;
+    caption.textContent = 'netto heute';
+    status.textContent = `${fmtClock(todayEntry.start!)} bis ${fmtClock(todayEntry.end!)}, Pause ${fmtDur(r.brk)}`;
+    hint.innerHTML = `Tagesergebnis <strong>${fmtSigned(r.diff)}</strong>`;
     hint.classList.add(signClass(r.diff));
   } else if (todayEntry && todayEntry.kind !== 'work') {
     digits.textContent = fmtClock(min);
+    caption.textContent = 'Uhrzeit';
     status.textContent = `Heute eingetragen: ${KIND_LABEL[todayEntry.kind]}`;
     hint.textContent = 'Zählt als Soll, das Konto bleibt gleich.';
   } else {
     digits.textContent = fmtClock(min);
+    caption.textContent = 'Uhrzeit';
     status.textContent = r && r.soll === 0 ? 'Wochenende, jede Minute zählt als Plus' : 'Noch nicht eingestempelt';
     hint.textContent = '';
   }
-  digits.setAttribute('aria-label', digits.textContent);
-  renderDaybar(todayEntry, min, zeroAt, fridayAt);
+  renderRings(today, min, todayEntry, r);
 
   // Stempel-Knopf
   $('stamp-label').textContent = working ? 'Ausstempeln' : done ? 'Weiterarbeiten' : 'Einstempeln';
@@ -184,7 +186,7 @@ function render() {
 
   renderBanner(today);
   renderWeek(today, min);
-  renderFacts(today, total, r, fridayAt);
+  renderCards(today, min, total, r, fridayAt);
   planReminders(today, todayEntry, working, zeroAt, fridayAt);
 }
 
@@ -197,36 +199,34 @@ function actionBtn(label: string, fn: () => void) {
   return b;
 }
 
-function renderDaybar(e: Entry | undefined, nowMin: number, zeroAt?: number, fridayAt?: number) {
-  const bar = $('daybar');
-  if (!e || e.kind !== 'work' || e.start === undefined || zeroAt === undefined) {
-    bar.hidden = true;
-    return;
-  }
-  bar.hidden = false;
-  const endMin = e.end ?? nowMin;
-  const from = e.start - 30;
-  const to = Math.max(zeroAt, fridayAt ?? 0, endMin) + 45;
-  const pct = (m: number) => `${(((m - from) / (to - from)) * 100).toFixed(2)}%`;
-  const overStart = Math.min(Math.max(endMin, e.start), zeroAt);
-  const marks: string[] = [
-    `<span class="mark start" style="left:${pct(e.start)}"><span>${fmtClock(e.start)}</span></span>`,
-    `<span class="mark zero" style="left:${pct(zeroAt)}"><span>0:00 um ${fmtClock(zeroAt)}</span></span>`,
-  ];
-  if (fridayAt !== undefined && fridayAt > zeroAt)
-    marks.push(`<span class="mark fri" style="left:${pct(fridayAt)}"><span>Freitag-Ziel ${fmtClock(fridayAt)}</span></span>`);
-  bar.innerHTML = `
-    <div class="track">
-      <span class="fill" style="left:${pct(e.start)};width:calc(${pct(overStart)} - ${pct(e.start)})"></span>
-      ${endMin > zeroAt ? `<span class="fill over" style="left:${pct(zeroAt)};width:calc(${pct(endMin)} - ${pct(zeroAt)})"></span>` : ''}
-      ${e.end === undefined ? `<span class="now" style="left:${pct(endMin)}"></span>` : ''}
-    </div>
-    <div class="marks">${marks.join('')}</div>`;
-  bar.setAttribute('role', 'img');
-  bar.setAttribute(
+// ---------- Ringe ----------
+
+function setRing(name: 'day' | 'week', p: number) {
+  const arc = $(`arc-${name}`) as unknown as SVGCircleElement;
+  const lap = $(`lap-${name}`) as unknown as SVGCircleElement;
+  const first = Math.min(Math.max(p, 0), 1) * 100;
+  const second = Math.min(Math.max(p - 1, 0), 1) * 100; // zweite Runde über dem Ziel
+  arc.style.strokeDashoffset = String(100 - first);
+  arc.classList.toggle('empty', first === 0);
+  lap.style.strokeDashoffset = String(100 - second);
+  lap.classList.toggle('empty', second === 0);
+}
+
+function renderRings(today: string, nowMin: number, e: Entry | undefined, r: DayResult | undefined) {
+  const st = s();
+  const dayGoal = st.sollMin;
+  const dayNet = e && r ? r.net : 0; // Schule/Urlaub zählen als erfülltes Soll
+  const mo = mondayOf(today);
+  const week = spanTotals(data.entries, st, mo, addDays(mo, 6), today, nowMin);
+  const weekGoal = st.sollMin * 5;
+  setRing('day', dayGoal ? dayNet / dayGoal : 0);
+  setRing('week', weekGoal ? week.net / weekGoal : 0);
+  $('lg-day').innerHTML = `${fmtDur(dayNet)}<small> / ${fmtDur(dayGoal)} Std.</small>`;
+  $('lg-week').innerHTML = `${fmtDur(week.net)}<small> / ${fmtDur(weekGoal)} Std.</small>`;
+  $('rings').setAttribute(
     'aria-label',
-    `Tagesverlauf: eingestempelt ${fmtClock(e.start)}, 0:00 erreicht um ${fmtClock(zeroAt)}` +
-      (fridayAt !== undefined ? `, Freitag-Ziel um ${fmtClock(fridayAt)}` : ''),
+    `${$('clock-digits').textContent} ${$('ring-caption').textContent}. Tag: ${fmtDur(dayNet)} von ${fmtDur(dayGoal)} Stunden. ` +
+      `Woche: ${fmtDur(week.net)} von ${fmtDur(weekGoal)} Stunden.`,
   );
 }
 
@@ -327,32 +327,127 @@ function renderWeek(today: string, nowMin: number) {
   $('month-sum').textContent = days
     ? `${fmtMonth.format(parseDate(ref))}: ${days} ${days === 1 ? 'Tag' : 'Tage'} erfasst, ${fmtDur(net)} Std. gearbeitet, ${fmtSigned(diff)}`
     : `${fmtMonth.format(parseDate(ref))}: noch keine Tage erfasst`;
+
+  renderChart(dates, today, nowMin);
 }
 
-function renderFacts(today: string, total: number, r: ReturnType<typeof dayResult> | undefined, fridayAt?: number) {
+// ---------- Wochen-Diagramm ----------
+
+const DAY_LETTER = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+function renderChart(dates: string[], today: string, nowMin: number) {
   const st = s();
-  const fri = $('friday');
-  const isFri = parseDate(today).getDay() === 5;
+  const shown = dates.filter((d) => {
+    const wd = parseDate(d).getDay();
+    return (wd >= 1 && wd <= 5) || data.entries[d];
+  });
+  const vals = shown.map((d) => {
+    const e = data.entries[d];
+    if (!e || d > today) return { d, net: 0, cls: '' };
+    const r = dayResult(e, st, d === today ? nowMin : undefined);
+    if (r.open && d !== today) return { d, net: 0, cls: '' };
+    return { d, net: r.net, cls: r.open ? 'live' : r.diff < 0 ? 'short' : '' };
+  });
+  const W = 320, top = 18, bottom = 24, H = 150 - top - bottom;
+  const max = Math.max(st.sollMin * 1.25, ...vals.map((v) => v.net * 1.1), 60);
+  const y = (m: number) => top + H - (m / max) * H;
+  const slot = W / shown.length;
+  const bw = Math.min(28, slot * 0.5);
+  let svg = '';
+  vals.forEach((v, i) => {
+    const cx = slot * i + slot / 2;
+    const h = Math.max((v.net / max) * H, v.net > 0 ? 4 : 0);
+    if (h > 0) {
+      svg += `<rect class="bar ${v.cls}" x="${(cx - bw / 2).toFixed(1)}" y="${(top + H - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="5"/>`;
+      svg += `<text class="val" x="${cx.toFixed(1)}" y="${(top + H - h - 5).toFixed(1)}" text-anchor="middle">${fmtDur(v.net)}</text>`;
+    }
+    svg += `<text class="day-label ${v.d === today ? 'today' : ''}" x="${cx.toFixed(1)}" y="${150 - 6}" text-anchor="middle">${DAY_LETTER[parseDate(v.d).getDay()]}</text>`;
+  });
+  const ys = y(st.sollMin).toFixed(1);
+  svg = `<line class="soll" x1="0" x2="${W}" y1="${ys}" y2="${ys}"/><text class="soll-label" x="${W}" y="${(+ys - 5).toFixed(1)}" text-anchor="end">Soll ${fmtDur(st.sollMin)}</text>` + svg;
+  const chart = $('week-chart');
+  chart.innerHTML = svg;
+  chart.setAttribute(
+    'aria-label',
+    'Arbeitszeit pro Tag: ' + vals.map((v) => `${DAY_LETTER[parseDate(v.d).getDay()]} ${fmtDur(v.net)}`).join(', '),
+  );
+}
+
+// ---------- Übersichtskarten ----------
+
+function renderCards(today: string, nowMin: number, total: number, r: DayResult | undefined, fridayAt?: number) {
+  const st = s();
+  const unit = (v: string, u: string) => `${v}<small>${u}</small>`;
+
+  // Zeitkonto mit Verlauf der letzten 14 Tage
+  $('konto-value').innerHTML = unit(fmtSigned(total), 'Std.');
+  const series = balanceSeries(data.entries, st, today, 14);
+  const lo = Math.min(0, ...series), hi = Math.max(0, ...series);
+  const span = hi - lo || 60;
+  const py = (v: number) => 36 - ((v - lo) / span) * 32;
+  const pts = series.map((v, i) => `${((i / (series.length - 1)) * 140).toFixed(1)},${py(v).toFixed(1)}`);
+  $('konto-spark').innerHTML =
+    `<line class="zero" x1="0" x2="140" y1="${py(0).toFixed(1)}" y2="${py(0).toFixed(1)}"/>` +
+    `<polygon class="area" points="0,${py(lo).toFixed(1)} ${pts.join(' ')} 140,${py(lo).toFixed(1)}"/>` +
+    `<polyline class="line" points="${pts.join(' ')}"/>`;
+  const change = series[series.length - 1] - series[0];
+  $('konto-note').textContent = change ? `${fmtSigned(change)} in 14 Tagen` : 'Letzte 14 Tage';
+
+  // Freitag-Ziel
   const th = st.fridayThresholdMin;
-  fri.className = 'friday';
+  const isFri = parseDate(today).getDay() === 5;
+  const bar = $('fri-bar');
   if (total >= th) {
-    fri.textContent = `Konto ${fmtSigned(total)}: Freitags darfst du früher gehen.`;
-    fri.classList.add('pos');
-  } else if (isFri && fridayAt !== undefined) {
-    fri.textContent = `Freitag: ${fmtSigned(th)} Plus erreichst du um ${fmtClock(fridayAt)}.`;
+    $('fri-value').textContent = 'Erreicht';
+    bar.style.width = '100%';
+    $('fri-note').textContent = 'Freitags darfst du früher gehen.';
   } else {
-    fri.textContent = `Bis zu ${fmtSigned(th)} für früheres Gehen am Freitag fehlen ${fmtDur(th - total)}.`;
+    $('fri-value').innerHTML = unit(fmtDur(th - total), 'Std. fehlen');
+    bar.style.width = `${Math.max(0, (total / th) * 100).toFixed(1)}%`;
+    $('fri-note').textContent =
+      isFri && fridayAt !== undefined ? `Heute um ${fmtClock(fridayAt)} erreicht.` : `Ziel: ${fmtSigned(th)} auf dem Konto.`;
   }
+
+  // Verdienst
   const p = pay(st);
   const todayNet = r && data.entries[today]?.kind === 'work' ? r.net : 0;
+  const month = spanTotals(data.entries, st, today.slice(0, 8) + '01', today, today, nowMin);
+  $('pay-value').textContent = fmtEuro((p.hourly * todayNet) / 60);
   const items: [string, string][] = [
-    ['Stundenlohn netto', fmtEuro(p.hourly)],
-    ['Heute verdient', fmtEuro((p.hourly * todayNet) / 60)],
-    ['Monatsstunden', `${p.monthlyHours.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Std.`],
+    ['Diesen Monat', fmtEuro((p.hourly * month.net) / 60)],
     ['Wert des Kontos', `${total < 0 ? '−' : ''}${fmtEuro(Math.abs((p.hourly * total) / 60))}`],
+    ['Stundenlohn', fmtEuro(p.hourly)],
   ];
-  $('pay').innerHTML = items.map(([k, v]) => `<div class="cell"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+  $('pay').innerHTML = items.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+
+  // Trends
+  const mo = mondayOf(today);
+  const thisAvg = avgWorkday(data.entries, st, mo, today);
+  const lastAvg = avgWorkday(data.entries, st, addDays(mo, -7), addDays(mo, -1));
+  const lines: [string, string][] = [];
+  if (thisAvg !== undefined) {
+    let txt = `Ø <strong>${fmtDur(thisAvg)}</strong> Std. pro Arbeitstag diese Woche`;
+    let arrow = '•';
+    if (lastAvg !== undefined && Math.round(thisAvg - lastAvg) !== 0) {
+      const dlt = Math.round(thisAvg - lastAvg);
+      arrow = dlt > 0 ? '↑' : '↓';
+      txt += `, ${fmtDur(Math.abs(dlt))} ${dlt > 0 ? 'mehr' : 'weniger'} als letzte Woche`;
+    }
+    lines.push([arrow, txt + '.']);
+  }
+  const starts = Object.values(data.entries).filter(
+    (e) => e.kind === 'work' && e.start !== undefined && e.date.slice(0, 7) === today.slice(0, 7),
+  );
+  if (starts.length >= 2) {
+    const avgStart = starts.reduce((a, e) => a + e.start!, 0) / starts.length;
+    lines.push(['⏱', `Im Schnitt stempelst du um <strong>${fmtClock(avgStart)}</strong> ein.`]);
+  }
+  if (month.days) lines.push([month.diff >= 0 ? '↑' : '↓', `${fmtMonth.format(parseDate(today))}: <strong>${fmtSigned(month.diff)}</strong> an ${month.days} ${month.days === 1 ? 'Tag' : 'Tagen'}.`]);
+  $('trends').innerHTML = lines.length
+    ? lines.map(([a, t]) => `<li><span class="arrow" aria-hidden="true">${a}</span><span>${t}</span></li>`).join('')
+    : '<li><span class="arrow" aria-hidden="true">•</span><span>Stempel ein paar Tage, dann siehst du hier deine Trends.</span></li>';
 }
+
 
 // ---------- Wischen zum Löschen ----------
 

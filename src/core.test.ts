@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_SETTINGS, Settings, balanceBefore, balanceTotal, breakFor, clockForNet, dayResult,
-  fmtSigned, mondayOf, parseSigned, pay,
+  DEFAULT_SETTINGS, Settings, avgWorkday, balanceBefore, balanceSeries, balanceTotal, breakFor, clockForNet, dayResult,
+  fmtSigned, mondayOf, parseSigned, pay, spanTotals,
 } from './core';
 
 const s: Settings = { ...DEFAULT_SETTINGS };
@@ -71,6 +71,28 @@ describe('Konto', () => {
     const need = s.sollMin + (s.fridayThresholdMin - prior);
     expect(clockForNet(420, need, s)).toBe(420 + 462 + 60 + 30);
     expect(mondayOf(fri)).toBe('2026-10-19');
+  });
+});
+
+describe('Ringe, Verlauf, Trends', () => {
+  const entries = {
+    '2026-10-19': { date: '2026-10-19', kind: 'work' as const, start: 420, end: 960 }, // netto 8:30, +0:48
+    '2026-10-20': { date: '2026-10-20', kind: 'school' as const }, // 7:42 angerechnet
+    [wed]: { date: wed, kind: 'work' as const, start: 420 }, // läuft
+  };
+  it('Wochensumme zählt den laufenden Tag live mit', () => {
+    const w = spanTotals(entries, s, '2026-10-19', '2026-10-25', wed, 420 + 300);
+    expect(w.soll).toBe(3 * 462);
+    expect(w.net).toBe(510 + 462 + 270);
+    expect(w.diff).toBe(48); // laufender Tag zählt noch nicht ins Plus/Minus
+    expect(w.days).toBe(2);
+  });
+  it('Kontoverlauf pro Tag', () => {
+    expect(balanceSeries(entries, s, wed, 3)).toEqual([48, 48, 48]);
+  });
+  it('Durchschnitt pro Arbeitstag ohne offene Tage', () => {
+    expect(avgWorkday(entries, s, '2026-10-19', '2026-10-25')).toBe(510);
+    expect(avgWorkday(entries, s, '2026-10-26', '2026-11-01')).toBeUndefined();
   });
 });
 

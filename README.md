@@ -7,7 +7,8 @@ Freitagsregel, Verdienst und Erinnerungen. Läuft offline, alle Daten bleiben au
 
 - **Stempeln mit einem Tipp** – großer Knopf unten, nimmt die aktuelle Uhrzeit. Fehlgriff? „Rückgängig“ im Hinweis.
 - **App-Shortcut „Stempeln“** – lange auf das App-Icon drücken → „Stempeln“: stempelt sofort ein bzw. aus.
-- **Live-Uhr und Tagesbalken** – Nettozeit läuft mit, der Balken zeigt Einstempeln, „0:00 erreicht“ und (freitags) das 3-Std.-Ziel.
+- **Ringe für Tag und Woche** – der innere Ring füllt sich bis zum Tages-Soll, der äußere bis zum Wochen-Soll; darüber läuft eine zweite Runde. In der Mitte die Nettozeit, darunter, wann du bei 0:00 bist.
+- **Übersicht** – Karten für Zeitkonto (mit 14-Tage-Verlauf), Freitag-Ziel, Verdienst und Trends, dazu ein Balkendiagramm der Woche.
 - **Zeitkonto ohne Rechnen** – jeder Tag wird gespeichert, das Konto rechnet sich selbst fort. Startsaldo einmal in den Einstellungen eintragen.
 - **Tagesarten** – Arbeit, Berufsschule, Urlaub, Krank, Feiertag (zählen als Soll erfüllt). Tippe auf einen Tag in der Woche zum Nachtragen oder Korrigieren.
 - **Erinnerungen** – Benachrichtigung bei 0:00, wenn das Freitag-Ziel erreicht ist und wenn du vergessen hast auszustempeln.
@@ -58,4 +59,4 @@ npm.cmd run build
 - `src/store.ts` – Speicherung (IndexedDB), Export/Import
 - `src/reminders.ts` – Benachrichtigungen und Kalender-Wecker (.ics)
 - `src/sheet.ts` – Blätter von unten (iOS-Stil, zum Schließen herunterziehen)
-- `src/styles.css` – Gestaltung (iOS-Listen, Glasleisten, Stempeluhr-Ziffern, Bernstein, Graphit im dunklen Modus)
+- `src/styles.css` – Gestaltung im Stil von Health/Fitness: Ringe, farbige Karten, runde Ziffern (Tag Bernstein, Woche Grün, Konto Türkis, Freitag Violett, Verdienst Pink)

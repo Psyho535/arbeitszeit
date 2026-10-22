@@ -117,6 +117,62 @@ export function balanceTotal(entries: Record<string, Entry>, s: Settings, today:
   return balanceBefore(entries, s, addDays(today, 1));
 }
 
+export interface Span {
+  net: number; // gearbeitete Nettozeit (Arbeitstage) bzw. angerechnetes Soll (Schule, Urlaub …)
+  soll: number;
+  diff: number; // nur abgeschlossene Tage
+  days: number; // abgeschlossene erfasste Tage
+}
+
+/** Summen über einen Zeitraum [from, to] (inklusive); der heutige Tag zählt live mit. */
+export function spanTotals(
+  entries: Record<string, Entry>, s: Settings, from: string, to: string, today: string, nowMin: number,
+): Span {
+  const out: Span = { net: 0, soll: 0, diff: 0, days: 0 };
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    const e = entries[d];
+    const soll = sollFor(d, s);
+    if (d <= today) out.soll += soll; // vergangene Tage ohne Eintrag zählen als Soll
+    if (!e || d > today) continue;
+    const r = dayResult(e, s, d === today ? nowMin : undefined);
+    if (r.open && d !== today) continue;
+    out.net += r.net;
+    if (r.open) continue; // laufender Tag: Nettozeit live, Differenz erst nach dem Ausstempeln (wie das Konto)
+    out.diff += r.diff;
+    out.days++;
+  }
+  return out;
+}
+
+/** Kontostand am Ende jedes der letzten `n` Tage bis `today` (für den Verlauf). */
+export function balanceSeries(entries: Record<string, Entry>, s: Settings, today: string, n: number): number[] {
+  const from = addDays(today, -(n - 1));
+  let bal = balanceBefore(entries, s, from);
+  const out: number[] = [];
+  for (let d = from; d <= today; d = addDays(d, 1)) {
+    const e = entries[d];
+    if (e) {
+      const r = dayResult(e, s);
+      if (!r.open) bal += r.diff;
+    }
+    out.push(bal);
+  }
+  return out;
+}
+
+/** Durchschnittliche Nettozeit pro erfasstem Arbeitstag im Zeitraum (nur abgeschlossene Arbeitstage). */
+export function avgWorkday(entries: Record<string, Entry>, s: Settings, from: string, to: string): number | undefined {
+  let sum = 0, n = 0;
+  for (const e of Object.values(entries)) {
+    if (e.date < from || e.date > to || e.kind !== 'work') continue;
+    const r = dayResult(e, s);
+    if (r.open || e.start === undefined) continue;
+    sum += r.net;
+    n++;
+  }
+  return n ? sum / n : undefined;
+}
+
 export interface Pay {
   monthlyHours: number;
   hourly: number;

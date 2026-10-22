@@ -1,9 +1,10 @@
 // Nur für die Entwicklung: App im Handyrahmen, Quellcode daneben (wird nicht mitgebaut).
-import '@fontsource/barlow-condensed/600.css';
+import '@fontsource/nunito/800.css';
 import './showcase.css';
 import mainSrc from './main.ts?raw';
 import coreSrc from './core.ts?raw';
 import storeSrc from './store.ts?raw';
+import sheetSrc from './sheet.ts?raw';
 import remindersSrc from './reminders.ts?raw';
 import stylesSrc from './styles.css?raw';
 import htmlSrc from '../index.html?raw';
@@ -14,6 +15,7 @@ const files: [string, string, 'ts' | 'css' | 'html'][] = [
   ['styles.css', stylesSrc, 'css'],
   ['index.html', htmlSrc, 'html'],
   ['reminders.ts', remindersSrc, 'ts'],
+  ['sheet.ts', sheetSrc, 'ts'],
   ['store.ts', storeSrc, 'ts'],
 ];
 

@@ -26,16 +26,41 @@
     <div class="app">
       <div class="large-title">
         <h1 id="large-title">Heute</h1>
-        <p class="subline"><span id="today-label"></span><span class="konto">Konto <strong id="balance-top">+0:00</strong></span></p>
+        <p class="subline" id="today-label"></p>
       </div>
 
       <div id="banner" class="banner" hidden></div>
 
       <main class="grid">
         <section class="clock" aria-labelledby="clock-status">
-          <p class="clock-digits" id="clock-digits" aria-hidden="true">0:00</p>
+          <div class="rings" id="rings" role="img">
+            <svg viewBox="0 0 300 300" aria-hidden="true">
+              <defs>
+                <filter id="lap-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#000" flood-opacity="0.45" />
+                </filter>
+              </defs>
+              <g class="ring week">
+                <circle class="track" cx="150" cy="150" r="128" />
+                <circle class="arc" id="arc-week" cx="150" cy="150" r="128" pathLength="100" />
+                <circle class="arc lap" id="lap-week" cx="150" cy="150" r="128" pathLength="100" />
+              </g>
+              <g class="ring day">
+                <circle class="track" cx="150" cy="150" r="96" />
+                <circle class="arc" id="arc-day" cx="150" cy="150" r="96" pathLength="100" />
+                <circle class="arc lap" id="lap-day" cx="150" cy="150" r="96" pathLength="100" />
+              </g>
+            </svg>
+            <div class="ring-center">
+              <p class="clock-digits" id="clock-digits">0:00</p>
+              <p class="ring-caption" id="ring-caption">Uhrzeit</p>
+            </div>
+          </div>
+          <dl class="legend">
+            <div class="day"><dt>Tag</dt><dd id="lg-day">0:00 / 7:42</dd></div>
+            <div class="week"><dt>Woche</dt><dd id="lg-week">0:00 / 38:30</dd></div>
+          </dl>
           <p class="clock-status" id="clock-status">Noch nicht eingestempelt</p>
-          <div class="daybar" id="daybar" hidden></div>
           <p class="clock-hint" id="clock-hint"></p>
           <div class="clock-actions" id="clock-actions"></div>
           <div class="stamp-dock">
@@ -47,6 +72,46 @@
         </section>
 
         <div class="side">
+          <section aria-labelledby="sum-title">
+            <h2 class="group-title" id="sum-title">Übersicht</h2>
+            <div class="cards">
+              <article class="card konto" aria-labelledby="konto-title">
+                <h3 class="card-head" id="konto-title">
+                  <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 14l4-4 3 3 7-7M12 6h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Zeitkonto
+                </h3>
+                <p class="card-value" id="konto-value">+0:00</p>
+                <svg class="spark" id="konto-spark" viewBox="0 0 140 40" preserveAspectRatio="none" aria-hidden="true"></svg>
+                <p class="card-note" id="konto-note">Letzte 14 Tage</p>
+              </article>
+              <article class="card fri" aria-labelledby="fri-title">
+                <h3 class="card-head" id="fri-title">
+                  <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 18V3M5 4h10l-2.5 3.5L15 11H5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Freitag-Ziel
+                </h3>
+                <p class="card-value" id="fri-value">–</p>
+                <div class="progress" aria-hidden="true"><span id="fri-bar"></span></div>
+                <p class="card-note" id="fri-note"></p>
+              </article>
+              <article class="card pay wide" aria-labelledby="pay-title">
+                <h3 class="card-head" id="pay-title">
+                  <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15 5.5A6 6 0 1 0 15 14.5M3 8.5h8M3 11.5h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  Verdienst
+                </h3>
+                <p class="card-value" id="pay-value">0,00 €</p>
+                <p class="card-note">heute verdient</p>
+                <dl class="mini" id="pay"></dl>
+              </article>
+              <article class="card trend wide" aria-labelledby="trend-title">
+                <h3 class="card-head" id="trend-title">
+                  <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 16V9M10 16V4M16 16v-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+                  Trends
+                </h3>
+                <ul class="trend-list" id="trends"></ul>
+              </article>
+            </div>
+          </section>
+
           <section id="woche" aria-labelledby="week-title">
             <div class="week-head">
               <button class="nav-icon" id="week-prev" type="button" aria-label="Vorherige Woche">
@@ -57,17 +122,14 @@
                 <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>
+            <div class="card week chart-card">
+              <svg class="chart" id="week-chart" viewBox="0 0 320 150" role="img" aria-label="Arbeitszeit pro Tag"></svg>
+            </div>
             <div class="group">
               <ol class="rows" id="week-rows"></ol>
               <p class="cell sum"><span>Woche</span><strong id="week-sum">+0:00</strong></p>
             </div>
             <p class="group-foot" id="month-sum"></p>
-          </section>
-
-          <section aria-labelledby="facts-title">
-            <h2 class="group-title" id="facts-title">Konto und Verdienst</h2>
-            <dl class="group" id="pay"></dl>
-            <p class="group-foot" id="friday"></p>
           </section>
         </div>
       </main>
