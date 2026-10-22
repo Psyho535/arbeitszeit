@@ -1,0 +1,86 @@
+:root {
+  --paper: #e8edf1;
+  --ink: #16233a;
+  --ink-2: #4a5a70;
+  --rule: #c9d3dd;
+  --amber: #e9a821;
+  --code-bg: #0e1828;
+  --code-ink: #d7e0ea;
+  --code-dim: #5d6f88;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 1rem/1.5 'Atkinson Hyperlegible', system-ui, sans-serif;
+}
+.show {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 32px;
+  height: 100%;
+  padding: 24px;
+}
+.phone-col { display: grid; justify-items: center; align-content: center; gap: 14px; }
+.phone {
+  position: relative;
+  width: 390px;
+  height: min(844px, calc(100vh - 110px));
+  padding: 12px;
+  border-radius: 54px;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px #2a3a55, 0 24px 60px rgb(22 35 58 / 0.28);
+}
+.notch {
+  position: absolute; top: 20px; left: 50%; z-index: 2;
+  width: 100px; height: 28px; margin-left: -50px; border-radius: 20px; background: #000;
+}
+.phone iframe {
+  display: block; width: 100%; height: 100%; border: 0; border-radius: 42px; background: var(--paper);
+  border-top: 40px solid var(--paper); /* Statusleiste wie auf dem Handy */
+}
+.reload {
+  min-height: 40px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--rule);
+  background: #f7f9fb; color: var(--ink); font: 700 0.9375rem/1 inherit; font-family: inherit; cursor: pointer;
+}
+.reload:hover { border-color: var(--ink-2); }
+:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+
+.code-col {
+  display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0;
+  border-radius: 18px; overflow: hidden; background: var(--code-bg); color-scheme: dark;
+}
+.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; padding: 8px 8px 0; background: #0a1220; }
+.tabs button {
+  flex: none; padding: 10px 14px; border: 0; border-radius: 10px 10px 0 0;
+  background: transparent; color: var(--code-dim); font: 700 0.875rem/1 inherit; font-family: inherit; cursor: pointer;
+}
+.tabs button small { font-weight: 400; opacity: 0.7; margin-left: 4px; }
+.tabs button:hover { color: var(--code-ink); }
+.tabs button[aria-selected='true'] { background: var(--code-bg); color: var(--code-ink); box-shadow: inset 0 2px 0 var(--amber); }
+.code {
+  margin: 0; overflow: auto; padding: 16px 0;
+  color: var(--code-ink); font: 0.8125rem/1.6 ui-monospace, 'Cascadia Code', Consolas, monospace; tab-size: 2;
+}
+.code code { counter-reset: ln; display: block; min-width: max-content; }
+.ln { display: block; padding-right: 24px; }
+.ln::before {
+  counter-increment: ln; content: counter(ln);
+  display: inline-block; width: 3.5em; padding-right: 1.2em; text-align: right; color: var(--code-dim); user-select: none;
+}
+.c { color: #6f8197; font-style: italic; }
+.s { color: #9fd3a8; }
+.k { color: #f0b43a; }
+.n { color: #8fbff0; }
+
+@media (max-width: 900px) {
+  .show { grid-template-columns: 1fr; height: auto; }
+  .code-col { height: 70vh; }
+}
+
+/* Statusleiste passend zum Farbschema der App */
+@media (prefers-color-scheme: dark) {
+  .phone iframe { border-top-color: #0e1828; background: #0e1828; }
+}

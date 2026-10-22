@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Arbeitszeit – Handy und Code</title>
+  </head>
+  <body>
+    <div class="show">
+      <section class="phone-col" aria-label="App im Handy">
+        <div class="phone">
+          <div class="notch" aria-hidden="true"></div>
+          <iframe id="app" src="./" title="Arbeitszeit-App"></iframe>
+        </div>
+        <button type="button" class="reload" id="reload">App neu laden</button>
+      </section>
+      <section class="code-col" aria-label="Quellcode">
+        <div class="tabs" role="tablist" id="tabs"></div>
+        <pre class="code" id="code" tabindex="0"><code></code></pre>
+      </section>
+    </div>
+    <script type="module" src="/src/showcase.ts"></script>
+  </body>
+</html>
