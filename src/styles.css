@@ -15,11 +15,11 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --paper: #0e1828;
-    --surface: #15233a;
-    --ink: #e6ecf3;
-    --ink-2: #9aabc2;
-    --rule: #2a3a55;
+    --paper: #141517;
+    --surface: #1e1f22;
+    --ink: #ececee;
+    --ink-2: #a5a8ae;
+    --rule: #323439;
     --amber: #f0b43a;
     --pos: #4cc38a;
     --neg: #f07a70;
@@ -27,11 +27,11 @@
   }
 }
 :root[data-theme='dark'] {
-  --paper: #0e1828;
-  --surface: #15233a;
-  --ink: #e6ecf3;
-  --ink-2: #9aabc2;
-  --rule: #2a3a55;
+  --paper: #141517;
+  --surface: #1e1f22;
+  --ink: #ececee;
+  --ink-2: #a5a8ae;
+  --rule: #323439;
   --amber: #f0b43a;
   --pos: #4cc38a;
   --neg: #f07a70;
@@ -204,7 +204,7 @@ dialog {
   border: 1px solid var(--rule); border-radius: 20px; background: var(--surface); color: var(--ink);
   overscroll-behavior: contain;
 }
-dialog::backdrop { background: rgb(14 24 40 / 0.45); }
+dialog::backdrop { background: rgb(20 21 23 / 0.5); }
 dialog h2 { font-size: 1.25rem; margin-bottom: 12px; }
 fieldset { border: 0; margin: 0 0 18px; padding: 0; display: grid; gap: 10px; }
 legend { font-weight: 700; margin-bottom: 6px; padding: 0; }

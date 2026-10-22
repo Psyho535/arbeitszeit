@@ -4,9 +4,9 @@
   --ink-2: #4a5a70;
   --rule: #c9d3dd;
   --amber: #e9a821;
-  --code-bg: #0e1828;
-  --code-ink: #d7e0ea;
-  --code-dim: #5d6f88;
+  --code-bg: #141517;
+  --code-ink: #e2e3e6;
+  --code-dim: #6c7078;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -24,23 +24,57 @@ body {
   padding: 24px;
 }
 .phone-col { display: grid; justify-items: center; align-content: center; gap: 14px; }
+/* iPhone in Titan-Grau: Metallrahmen, schwarzer Glasrand, Dynamic Island */
 .phone {
+  --screen: #e8edf1; /* Statusleiste in App-Farbe */
+  --screen-ink: #16233a;
   position: relative;
-  width: 390px;
-  height: min(844px, calc(100vh - 110px));
-  padding: 12px;
-  border-radius: 54px;
-  background: var(--ink);
-  box-shadow: 0 0 0 2px #2a3a55, 0 24px 60px rgb(22 35 58 / 0.28);
+  width: 402px;
+  height: min(874px, calc(100vh - 110px));
+  padding: 4px;
+  border-radius: 64px;
+  background: linear-gradient(145deg, #c9cbcf 0%, #8d9096 22%, #b4b7bc 48%, #6f7277 76%, #a9acb1 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.45),
+    inset 0 0 0 2.5px rgb(0 0 0 / 0.25),
+    0 1px 2px rgb(0 0 0 / 0.25),
+    0 30px 70px -10px rgb(30 34 40 / 0.45);
 }
-.notch {
-  position: absolute; top: 20px; left: 50%; z-index: 2;
-  width: 100px; height: 28px; margin-left: -50px; border-radius: 20px; background: #000;
+.hw {
+  position: absolute; width: 4px; border-radius: 2px;
+  background: linear-gradient(90deg, #6f7277, #b4b7bc 60%, #8d9096);
 }
-.phone iframe {
-  display: block; width: 100%; height: 100%; border: 0; border-radius: 42px; background: var(--paper);
-  border-top: 40px solid var(--paper); /* Statusleiste wie auf dem Handy */
+.hw.action { left: -3px; top: 150px; height: 32px; }
+.hw.vol-up { left: -3px; top: 210px; height: 62px; }
+.hw.vol-down { left: -3px; top: 286px; height: 62px; }
+.hw.power { right: -3px; top: 250px; height: 98px; }
+.screen {
+  position: relative;
+  display: grid;
+  grid-template-rows: 54px minmax(0, 1fr) 30px;
+  height: 100%;
+  border-radius: 60px;
+  border: 10px solid #050506;
+  background: var(--screen);
+  overflow: hidden;
 }
+.statusbar {
+  position: relative;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 30px 0 34px;
+  color: var(--screen-ink);
+  font: 600 1.0625rem/1 -apple-system, 'SF Pro Text', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+.island {
+  position: absolute; top: 11px; left: 50%;
+  width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #000;
+}
+.sb-icons { display: flex; align-items: center; gap: 6px; }
+.sb-icons svg { fill: currentColor; }
+.screen iframe { display: block; width: 100%; height: 100%; border: 0; background: var(--screen); }
+.homebar { display: grid; place-items: center; }
+.homebar span { width: 134px; height: 5px; border-radius: 3px; background: var(--screen-ink); }
 .reload {
   min-height: 40px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--rule);
   background: #f7f9fb; color: var(--ink); font: 700 0.9375rem/1 inherit; font-family: inherit; cursor: pointer;
@@ -52,7 +86,7 @@ body {
   display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0;
   border-radius: 18px; overflow: hidden; background: var(--code-bg); color-scheme: dark;
 }
-.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; padding: 8px 8px 0; background: #0a1220; }
+.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; padding: 8px 8px 0; background: #0e0f10; }
 .tabs button {
   flex: none; padding: 10px 14px; border: 0; border-radius: 10px 10px 0 0;
   background: transparent; color: var(--code-dim); font: 700 0.875rem/1 inherit; font-family: inherit; cursor: pointer;
@@ -82,5 +116,5 @@ body {
 
 /* Statusleiste passend zum Farbschema der App */
 @media (prefers-color-scheme: dark) {
-  .phone iframe { border-top-color: #0e1828; background: #0e1828; }
+  .phone { --screen: #141517; --screen-ink: #ececee; }
 }

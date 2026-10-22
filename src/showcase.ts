@@ -74,6 +74,24 @@ try {
 }
 show(Math.min(start, files.length - 1));
 
+// Kein Scrollbalken in der App – auf dem Handy gibt es auch keinen
+const frame = document.getElementById('app') as HTMLIFrameElement;
+frame.addEventListener('load', () => {
+  const st = frame.contentDocument?.createElement('style');
+  if (!st) return;
+  st.textContent = 'html{scrollbar-width:none}html::-webkit-scrollbar{display:none}';
+  frame.contentDocument!.head.append(st);
+});
+
+// Uhrzeit in der Statusleiste wie auf dem iPhone (ohne führende Null)
+const sbTime = document.getElementById('sb-time')!;
+const tickTime = () => {
+  const d = new Date();
+  sbTime.textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+tickTime();
+setInterval(tickTime, 15_000);
+
 document.getElementById('reload')!.addEventListener('click', () => {
   (document.getElementById('app') as HTMLIFrameElement).contentWindow?.location.reload();
 });
